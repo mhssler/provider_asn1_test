@@ -45,7 +45,6 @@ end_per_testcase(_TestCase, _Config) ->
 generates_asn1_with_correct_args(Config) ->
     %% Configure
     ReleaseDir = ?config(release_dir, Config),
-    ct:pal("~w:~w:~w ==>~n~p~n", [?MODULE, ?LINE, ?FUNCTION_NAME, ReleaseDir]),
 
     AppEbinDir = filename:join([ReleaseDir, "_build", "default", "lib", app,
                                 "ebin"]),
