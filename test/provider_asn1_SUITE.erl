@@ -9,26 +9,25 @@
          init_per_testcase/2,
          end_per_testcase/2,
 
-         generates_asn1_with_correct_args/1]).
+         use_asn1_args_from_top_rebar_config/1]).
 
 all() ->
     [{group, one_app},
      {group, many_apps}].
 
+all_tcs() ->
+    [use_asn1_args_from_top_rebar_config].
+
 groups() ->
-    [{one_app, [], [generates_asn1_with_correct_args]},
-     {many_apps, [], [generates_asn1_with_correct_args]}].
+    [{one_app, [], all_tcs()},
+     {many_apps, [], all_tcs()}].
 
 %%-------------------------------------------------------------------
 %% Tests
 %%-------------------------------------------------------------------
-init_per_group(one_app, Config) ->
+init_per_group(Group, Config) ->
     DataDir = ?config(data_dir, Config),
-    ReleaseDir = filename:join(DataDir, one_app),
-    [{release_dir, ReleaseDir}];
-init_per_group(many_apps, Config) ->
-    DataDir = ?config(data_dir, Config),
-    ReleaseDir = filename:join(DataDir, many_apps),
+    ReleaseDir = filename:join(DataDir, Group),
     [{release_dir, ReleaseDir}].
 
 end_per_group(_Group, _Config) ->
@@ -42,12 +41,11 @@ init_per_testcase(_TestCase, Config) ->
 end_per_testcase(_TestCase, _Config) ->
     ok.
 
-generates_asn1_with_correct_args(Config) ->
+use_asn1_args_from_top_rebar_config(Config) ->
     %% Configure
     ReleaseDir = ?config(release_dir, Config),
-
-    AppEbinDir = filename:join([ReleaseDir, "_build", "default", "lib", app,
-                                "ebin"]),
+    AppEbinDir = filename:join([ReleaseDir, "_build", "default", "lib",
+                                "app", "ebin"]),
 
     TopRebarConfigFile = filename:join(ReleaseDir, "rebar.config"),
     TopRebarConfigTxt =
@@ -68,7 +66,8 @@ generates_asn1_with_correct_args(Config) ->
     true = code:add_path(AppEbinDir),
     %% TestAppName = TestAppName:module_info(module),
 
-    %% Verify: ASN.1 module generated and compiled
+    %% Verify: ASN.1 module generated and compiled with the options
+    %% from rebar.config
     Asn1ModuleName = 'Hello',
     Asn1ModuleName = Asn1ModuleName:module_info(module),
     Asn1ModuleAttribs = Asn1ModuleName:module_info(attributes),
