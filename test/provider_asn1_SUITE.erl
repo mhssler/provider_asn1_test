@@ -17,8 +17,8 @@ all() ->
 init_per_testcase(TestCase, Config) ->
     DataDir = ?config(data_dir, Config),
     ReleaseDir = filename:join(DataDir, TestCase),
-    {0, _} = os_cmd("rebar3 clean", [{cd, ReleaseDir}]),
     [{release_dir, ReleaseDir} | Config].
+    {ok, _} = rebar_utils:sh("rebar3 clean", [{cd, ReleaseDir}]),
 
 end_per_testcase(_TestCase, _Config) ->
     ok.
@@ -46,7 +46,7 @@ generates_asn1(Config) ->
     ok = file:write_file(TopRebarConfigFile, TopRebarConfigTxt),
 
     %% Generate asn1
-    {0, _} = os_cmd("rebar3 compile", [{cd, ReleaseDir}]),
+    {ok, _} = rebar_utils:sh("rebar3 compile", [{cd, ReleaseDir}]),
     true = code:add_path(AppEbinDir),
     %% TestAppName = TestAppName:module_info(module),
 
@@ -63,31 +63,3 @@ generates_asn1(Config) ->
     [true = lists:member(X, ExistingAsn1Options) || X <- ExpectedAsn1Options],
 
     ok.
-
-
-%%--------------------------------------------------------------------
-%% Helpers
-%%--------------------------------------------------------------------
-os_cmd(Cmd, ExtraOpts) ->
-    Opts = [stream, in, out, use_stdio, stderr_to_stdout, exit_status] ++
-        ExtraOpts,
-    Port = open_port({spawn, "/bin/sh -s os_cmd 2>&1"}, Opts),
-    port_command(Port, Cmd ++ "; exit $?\n"),
-    {ExitStatus, Output} = receive_until_exit(Port, []),
-    ct:pal("CMD: ~s~n"
-           "OPTS: ~p~n"
-           "EXIT STATUS: ~p~n"
-           "OUTPUT: ~s", [Cmd, Opts, ExitStatus, Output]),
-    {ExitStatus, Output}.
-
-receive_until_exit(Port, Acc) ->
-    receive
-        {Port, {data, Data}} ->
-            receive_until_exit(Port, [Data | Acc]);
-        {Port, {exit_status, ExitStatus}} ->
-            {ExitStatus, lists:flatten(lists:reverse(Acc))}
-    end.
-
-%% FIXME: Use rebar_utils:sh/2 instead
-%% rebar_utils:sh(?FMT("git checkout -q ~ts", [rebar_utils:escape_chars(Rev)]),
-%%                   [{cd, Dir}]).
