@@ -3,22 +3,41 @@
 -include_lib("common_test/include/ct.hrl").
 
 -export([all/0,
+         groups/0,
+         init_per_group/2,
+         end_per_group/2,
          init_per_testcase/2,
          end_per_testcase/2,
 
          generates_asn1/1]).
 
 all() ->
-    [generates_asn1].
+    [{group, one_app},
+     {group, many_apps}].
+
+groups() ->
+    [{one_app, [], [generates_asn1]},
+     {many_apps, [], [generates_asn1]}].
 
 %%-------------------------------------------------------------------
 %% Tests
 %%-------------------------------------------------------------------
-init_per_testcase(TestCase, Config) ->
+init_per_group(one_app, Config) ->
     DataDir = ?config(data_dir, Config),
-    ReleaseDir = filename:join(DataDir, TestCase),
-    [{release_dir, ReleaseDir} | Config].
+    ReleaseDir = filename:join(DataDir, one_app),
+    [{release_dir, ReleaseDir}];
+init_per_group(many_apps, Config) ->
+    DataDir = ?config(data_dir, Config),
+    ReleaseDir = filename:join(DataDir, many_apps),
+    [{release_dir, ReleaseDir}].
+
+end_per_group(_Group, _Config) ->
+    ok.
+
+init_per_testcase(_TestCase, Config) ->
+    ReleaseDir = ?config(release_dir, Config),
     {ok, _} = rebar_utils:sh("rebar3 clean", [{cd, ReleaseDir}]),
+    Config.
 
 end_per_testcase(_TestCase, _Config) ->
     ok.
