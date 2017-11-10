@@ -1,9 +1,9 @@
 provider_asn1_test
 =====
 
-An OTP application
+Experimental test of mhssler/provider_asn1, a rebar3 provider.
 
-Build
+Build & test
 -----
 
-    $ rebar3 compile
+    $ rebar3 ct
