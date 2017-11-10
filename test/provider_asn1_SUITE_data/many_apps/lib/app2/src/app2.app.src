@@ -1,0 +1,4 @@
+{application, app2,
+  [{vsn, "0.0.1"},
+   {applications, [kernel, stdlib]},
+   {env, []}]}.
