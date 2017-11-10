@@ -9,15 +9,15 @@
          init_per_testcase/2,
          end_per_testcase/2,
 
-         generates_asn1/1]).
+         generates_asn1_with_correct_args/1]).
 
 all() ->
     [{group, one_app},
      {group, many_apps}].
 
 groups() ->
-    [{one_app, [], [generates_asn1]},
-     {many_apps, [], [generates_asn1]}].
+    [{one_app, [], [generates_asn1_with_correct_args]},
+     {many_apps, [], [generates_asn1_with_correct_args]}].
 
 %%-------------------------------------------------------------------
 %% Tests
@@ -42,7 +42,7 @@ init_per_testcase(_TestCase, Config) ->
 end_per_testcase(_TestCase, _Config) ->
     ok.
 
-generates_asn1(Config) ->
+generates_asn1_with_correct_args(Config) ->
     %% Configure
     ReleaseDir = ?config(release_dir, Config),
     ct:pal("~w:~w:~w ==>~n~p~n", [?MODULE, ?LINE, ?FUNCTION_NAME, ReleaseDir]),
