@@ -10,7 +10,8 @@
          end_per_testcase/2,
 
          use_asn1_args_from_top_rebar_config/1,
-         use_asn1_args_from_sub_rebar_config/1]).
+         use_asn1_args_from_sub_rebar_config/1,
+         use_asn1_args_from_cmd_line/1]).
 
 all() ->
     [{group, one_app},
@@ -18,7 +19,8 @@ all() ->
 
 all_tcs() ->
     [use_asn1_args_from_top_rebar_config,
-     use_asn1_args_from_sub_rebar_config].
+     use_asn1_args_from_sub_rebar_config,
+     use_asn1_args_from_cmd_line].
 
 groups() ->
     [{one_app, [], all_tcs()},
@@ -47,20 +49,34 @@ end_per_testcase(_TestCase, _Config) ->
 
 %% Test
 use_asn1_args_from_top_rebar_config(Config) ->
-    ok = write_top_rebar_config(Config),
+    ok = write_top_rebar_config(args, Config),
     ok = verify_use_of_asn1_args(Config).
 
 %% Test
 use_asn1_args_from_sub_rebar_config(Config) ->
-    ok = write_top_rebar_config(Config),
+    ok = write_top_rebar_config(args, Config),
     ok = write_sub_rebar_config(Config),
     ok = verify_use_of_asn1_args(Config).
+
+%% Test
+use_asn1_args_from_cmd_line(Config) ->
+    ok = write_top_rebar_config(no_args, Config),
+    CompileOpts = mk_rebar_asn1_cmd_opts(),
+    CompileCmd = "rebar3 asn compile "  ++ CompileOpts,
+    ok = verify_use_of_asn1_args(CompileCmd, Config),
+    ok.
 
 %%-------------------------------------------------------------------
 %% Helpers
 %%-------------------------------------------------------------------
-write_top_rebar_config(Config) ->
-    RebarConfigTxt = mk_rebar_config_head() ++ mk_rebar_config_asn1_args(),
+write_top_rebar_config(Type, Config) ->
+    Asn1Args = case Type of
+                   args ->
+                       mk_rebar_config_asn1_args();
+                   no_args ->
+                       []
+               end,
+    RebarConfigTxt = mk_rebar_config_head() ++ Asn1Args,
     write_rebar_config(release_dir, RebarConfigTxt, Config).
 
 write_sub_rebar_config(Config) ->
@@ -86,11 +102,17 @@ mk_rebar_config_asn1_args() ->
         "             {verbose, true},\n"
         "             {compile_opts, [der, compact_bit_string]}]}.\n".
 
+mk_rebar_asn1_cmd_opts() ->
+    "-e per -v -o'der,compact_bit_string'".
+
 verify_use_of_asn1_args(Config) ->
+    verify_use_of_asn1_args("rebar3 compile", Config).
+
+verify_use_of_asn1_args(CompileCmd, Config) ->
     ReleaseDir = ?config(release_dir, Config),
     AppDir = ?config(app_dir, Config),
-    %% Generate asn1
-    {ok, _} = rebar_utils:sh("rebar3 compile", [{cd, ReleaseDir}]),
+    %% Generate ASN.1
+    {ok, _} = rebar_utils:sh(CompileCmd, [{cd, ReleaseDir}]),
     true = code:add_path(filename:join(AppDir, "ebin")),
 
     %% Verify: ASN.1 module generated and compiled with the options
