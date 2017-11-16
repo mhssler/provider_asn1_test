@@ -9,14 +9,16 @@
          init_per_testcase/2,
          end_per_testcase/2,
 
-         use_asn1_args_from_top_rebar_config/1]).
+         use_asn1_args_from_top_rebar_config/1,
+         use_asn1_args_from_sub_rebar_config/1]).
 
 all() ->
     [{group, one_app},
      {group, many_apps}].
 
 all_tcs() ->
-    [use_asn1_args_from_top_rebar_config].
+    [use_asn1_args_from_top_rebar_config,
+     use_asn1_args_from_sub_rebar_config].
 
 groups() ->
     [{one_app, [], all_tcs()},
@@ -28,7 +30,9 @@ groups() ->
 init_per_group(Group, Config) ->
     DataDir = ?config(data_dir, Config),
     ReleaseDir = filename:join(DataDir, Group),
-    [{release_dir, ReleaseDir}].
+    AppDir = filename:join([ReleaseDir, "_build", "default", "lib", "app"]),
+    [{release_dir, ReleaseDir},
+     {app_dir, AppDir}].
 
 end_per_group(_Group, _Config) ->
     ok.
@@ -41,30 +45,53 @@ init_per_testcase(_TestCase, Config) ->
 end_per_testcase(_TestCase, _Config) ->
     ok.
 
+%% Test
 use_asn1_args_from_top_rebar_config(Config) ->
-    %% Configure
-    ReleaseDir = ?config(release_dir, Config),
-    AppEbinDir = filename:join([ReleaseDir, "_build", "default", "lib",
-                                "app", "ebin"]),
+    ok = write_top_rebar_config(Config),
+    ok = verify_use_of_asn1_args(Config).
 
-    TopRebarConfigFile = filename:join(ReleaseDir, "rebar.config"),
-    TopRebarConfigTxt =
-        "{erl_opts, [debug_info]}.\n"
+%% Test
+use_asn1_args_from_sub_rebar_config(Config) ->
+    ok = write_top_rebar_config(Config),
+    ok = write_sub_rebar_config(Config),
+    ok = verify_use_of_asn1_args(Config).
+
+%%-------------------------------------------------------------------
+%% Helpers
+%%-------------------------------------------------------------------
+write_top_rebar_config(Config) ->
+    RebarConfigTxt = mk_rebar_config_head() ++ mk_rebar_config_asn1_args(),
+    write_rebar_config(release_dir, RebarConfigTxt, Config).
+
+write_sub_rebar_config(Config) ->
+    RebarConfigTxt = mk_rebar_config_asn1_args(),
+    write_rebar_config(app_dir, RebarConfigTxt, Config).
+
+write_rebar_config(DirType, RebarConfigTxt, Config) ->
+    AppDir = ?config(DirType, Config),
+    RebarConfigFile = filename:join(AppDir, "rebar.config"),
+    ok = file:write_file(RebarConfigFile, RebarConfigTxt).
+
+mk_rebar_config_head() ->
+    "{erl_opts, [debug_info]}.\n"
         "{deps, []}.\n"
         "{plugins, [{provider_asn1,\n"
         "   {git, \"https://github.com/mhssler/provider_asn1.git\",\n"
         "    {tag, \"master\"}}}]}.\n"
         "{provider_hooks, [{pre, [{compile, {asn, compile}}]},\n"
-        "                  {post, [{clean, {asn, clean}}]}]}.\n"
-        "{asn1_args, [{encoding, per},\n"
-        "             {verbose, true},\n"
-        "             {compile_opts, [der, compact_bit_string]}]}.\n",
-    ok = file:write_file(TopRebarConfigFile, TopRebarConfigTxt),
+        "                  {post, [{clean, {asn, clean}}]}]}.\n".
 
+mk_rebar_config_asn1_args() ->
+    "{asn1_args, [{encoding, per},\n"
+        "             {verbose, true},\n"
+        "             {compile_opts, [der, compact_bit_string]}]}.\n".
+
+verify_use_of_asn1_args(Config) ->
+    ReleaseDir = ?config(release_dir, Config),
+    AppDir = ?config(app_dir, Config),
     %% Generate asn1
     {ok, _} = rebar_utils:sh("rebar3 compile", [{cd, ReleaseDir}]),
-    true = code:add_path(AppEbinDir),
-    %% TestAppName = TestAppName:module_info(module),
+    true = code:add_path(filename:join(AppDir, "ebin")),
 
     %% Verify: ASN.1 module generated and compiled with the options
     %% from rebar.config
