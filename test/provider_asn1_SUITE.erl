@@ -1,3 +1,8 @@
+%%%-------------------------------------------------------------------
+%%% @private
+%%% @doc       Test provider_asn1
+%%% @end
+%%%-------------------------------------------------------------------
 -module(provider_asn1_SUITE).
 
 -include_lib("common_test/include/ct.hrl").
@@ -23,6 +28,8 @@ all_tcs() ->
      use_asn1_args_from_cmd_line].
 
 groups() ->
+    %% See SUITE data_dir (provider_asn1_SUITE_data/) for difference
+    %% between the two groups.
     [{one_app, [], all_tcs()},
      {many_apps, [], all_tcs()}].
 
