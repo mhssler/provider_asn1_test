@@ -1,6 +1,10 @@
 %%%-------------------------------------------------------------------
 %%% @private
 %%% @doc       Test provider_asn1
+%%%
+%%% Top rebar.config is <data-dir>/<group-name>/rebar.config
+%%% Sub rebar.config is <data-dir>/<group-name>/lib/<app-name>/rebar.config
+%%%
 %%% @end
 %%%-------------------------------------------------------------------
 -module(provider_asn1_SUITE).
@@ -55,18 +59,21 @@ init_per_testcase(_TestCase, Config) ->
 end_per_testcase(_TestCase, _Config) ->
     ok.
 
-%% Test
+%% Top rebar config contains full configuration including
+%% asn1_args. Sub rebar configs do not exist.
 use_asn1_args_from_top_rebar_config(Config) ->
     ok = write_top_rebar_config(args, Config),
     ok = verify_use_of_asn1_args(Config).
 
-%% Test
+%% Top rebar config minimal configuration. Sub rebar configs contains
+%% asn1_args.
 use_asn1_args_from_sub_rebar_config(Config) ->
     ok = write_top_rebar_config(args, Config),
     ok = write_sub_rebar_config(Config),
     ok = verify_use_of_asn1_args(Config).
 
-%% Test
+%% Top rebar config contains minimal configuration. Sub rebar configs
+%% do not exist. asn1_args are provided from the command line.
 use_asn1_args_from_cmd_line(Config) ->
     ok = write_top_rebar_config(no_args, Config),
     CompileOpts = mk_rebar_asn1_cmd_opts(),
