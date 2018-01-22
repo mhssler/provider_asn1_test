@@ -44,6 +44,9 @@ init_per_group(Group, Config) ->
     DataDir = ?config(data_dir, Config),
     ReleaseDir = filename:join(DataDir, Group),
     AppDir = filename:join([ReleaseDir, "_build", "default", "lib", "app"]),
+    %% AppDir is created by rebar, but we want it there before in case
+    %% we want to create rebar.config there.
+    ok = filelib:ensure_dir(filename:join(AppDir, ".")),
     [{release_dir, ReleaseDir},
      {app_dir, AppDir}].
 
