@@ -47,6 +47,7 @@ end_per_group(_Group, _Config) ->
     ok.
 
 init_per_testcase(_TestCase, Config) ->
+    ct:pal("Config:~n~p", [Config]),
     ReleaseDir = ?config(release_dir, Config),
     {ok, _} = rebar_utils:sh("rebar3 clean", [{cd, ReleaseDir}]),
     Config.
@@ -84,15 +85,18 @@ write_top_rebar_config(Type, Config) ->
                        []
                end,
     RebarConfigTxt = mk_rebar_config_head() ++ Asn1Args,
+    ct:pal("Top rebar.config:~n~s", [RebarConfigTxt]),
     write_rebar_config(release_dir, RebarConfigTxt, Config).
 
 write_sub_rebar_config(Config) ->
     RebarConfigTxt = mk_rebar_config_asn1_args(),
+    ct:pal("Sub rebar.config:~n~s", [RebarConfigTxt]),
     write_rebar_config(app_dir, RebarConfigTxt, Config).
 
 write_rebar_config(DirType, RebarConfigTxt, Config) ->
     AppDir = ?config(DirType, Config),
     RebarConfigFile = filename:join(AppDir, "rebar.config"),
+    ct:pal("rebar.config:~n~s", [RebarConfigTxt]),
     ok = file:write_file(RebarConfigFile, RebarConfigTxt).
 
 mk_rebar_config_head() ->
